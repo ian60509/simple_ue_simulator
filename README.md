@@ -9,14 +9,14 @@ Edit the `ueConfigs` map in `main.go` to configure UEs:
 ```go
 var ueConfigs = map[string]struct {
    iface string
-   ip    string
+   ips   []string
    rate  float64 // Mbps
 }{
-   "ue0": {"ueTun0", "1.1.1.1", 1.0},
-   "ue1": {"ueTun1", "8.8.8.8", 0.5},
-   "ue2": {"ueTun2", "1.1.1.1", 2.0},
-   "ue3": {"ueTun3", "8.8.8.8", 1.5},
-   "ue4": {"ueTun4", "1.1.1.1", 1.2},
+   "ue0": {"ueTun0", []string{"1.1.1.1", "8.8.8.8"}, 1.0},
+   "ue1": {"ueTun1", []string{"8.8.8.8", "1.1.1.1"}, 0.5},
+   "ue2": {"ueTun2", []string{"1.1.1.1", "8.8.8.8"}, 2.0},
+   "ue3": {"ueTun3", []string{"8.8.8.8", "1.1.1.1"}, 1.5},
+   "ue4": {"ueTun4", []string{"1.1.1.1", "8.8.8.8"}, 1.2},
 }
 ```
 
