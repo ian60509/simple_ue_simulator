@@ -10,15 +10,16 @@ import (
 
 // Configuration section - Modify these values as needed
 var ueConfigs = map[string]struct {
-	ip   string
-	rate float64 // Mbps
+	iface string
+	ip    string
+	rate  float64 // Mbps
 }{
-	"ue1": {"1.1.1.1", 1.0},
-	"ue2": {"8.8.8.8", 0.5},
-	"ue3": {"1.1.1.1", 2.0},
+	"ue0": {"ueTun0", "1.1.1.1", 1.0},
+	"ue1": {"ueTun1", "8.8.8.8", 0.5},
+	"ue2": {"ueTun2", "1.1.1.1", 2.0},
+	"ue3": {"ueTun3", "8.8.8.8", 1.5},
+	"ue4": {"ueTun4", "1.1.1.1", 1.2},
 }
-
-const interfaceName = "ueTun0"
 const packetSizeBits = 84 * 8 // 672 bits (20 IP + 8 ICMP + 56 data)
 
 type Stats struct {
@@ -56,10 +57,10 @@ func main() {
 
 	for ueName, config := range ueConfigs {
 		wg.Add(1)
-		go func(name, ip string, rate float64) {
+		go func(name, iface, ip string, rate float64) {
 			defer wg.Done()
-			sendPing(name, ip, rate)
-		}(ueName, config.ip, config.rate)
+			sendPing(name, iface, ip, rate)
+		}(ueName, config.iface, config.ip, config.rate)
 	}
 
 	// Wait indefinitely since pings are continuous
@@ -67,15 +68,15 @@ func main() {
 	fmt.Println("All UEs have stopped.")
 }
 
-func sendPing(ueName, ip string, rate float64) {
+func sendPing(ueName, iface, ip string, rate float64) {
 	// Calculate interval between pings to maintain the specified rate
 	intervalSeconds := packetSizeBits / (rate * 1e6)
 	interval := time.Duration(intervalSeconds*1e9) * time.Nanosecond
 
-	fmt.Printf("[%s] Starting continuous ping to %s at %.1f Mbps\n", ueName, ip, rate)
+	fmt.Printf("[%s] Starting continuous ping on %s to %s at %.1f Mbps\n", ueName, iface, ip, rate)
 
 	for {
-		cmd := exec.Command("ping", "-I", interfaceName, ip, "-c", "1")
+		cmd := exec.Command("ping", "-I", iface, ip, "-c", "1")
 		// Suppress output to avoid clutter
 		cmd.Stdout = nil
 		cmd.Stderr = nil
@@ -94,9 +95,9 @@ func sendPing(ueName, ip string, rate float64) {
 
 func printTable() {
 	fmt.Println("\nUE Traffic Statistics:")
-	fmt.Println("+-------+------------+-------+------------+")
-	fmt.Println("| UE    | IP         | Rate  | Success %  |")
-	fmt.Println("+-------+------------+-------+------------+")
+	fmt.Println("+-------+------------+------------+-------+------------+")
+	fmt.Println("| UE    | Interface  | IP         | Rate  | Success %  |")
+	fmt.Println("+-------+------------+------------+-------+------------+")
 
 	for ueName, config := range ueConfigs {
 		stat := stats[ueName]
@@ -110,8 +111,8 @@ func printTable() {
 			successRate = float64(success) / float64(sent) * 100
 		}
 
-		fmt.Printf("| %-5s | %-10s | %-5.1f | %-10.1f |\n", ueName, config.ip, config.rate, successRate)
+		fmt.Printf("| %-5s | %-10s | %-10s | %-5.1f | %-10.1f |\n", ueName, config.iface, config.ip, config.rate, successRate)
 	}
 
-	fmt.Println("+-------+------------+-------+------------+")
+	fmt.Println("+-------+------------+------------+-------+------------+")
 }
